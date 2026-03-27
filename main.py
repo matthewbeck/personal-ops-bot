@@ -138,8 +138,28 @@ async def handle_message(event: dict):
         if not agent:
             return
 
+        # Build conversation history from full channel (last 30 messages)
+        conversation_history = []
+        channel_history = await slack_get("conversations.history", {
+            "channel": channel_id,
+            "limit": 30
+        })
+        messages = list(reversed(channel_history.get("messages", [])))
+        for msg in messages:
+            msg_text = msg.get("text", "")
+            if not msg_text:
+                continue
+            if msg.get("bot_id") or msg.get("app_id"):
+                conversation_history.append({"role": "assistant", "content": msg_text})
+            else:
+                conversation_history.append({"role": "user", "content": msg_text})
+
+        # Remove the last message (that's the current one, passed separately)
+        if conversation_history:
+            conversation_history = conversation_history[:-1]
+
         print(f"📞 Calling Claude API...")
-        response = await call_claude(agent, text)
+        response = await call_claude(agent, text, conversation_history)
         print(f"📞 Claude responded: {response[:100]}")
         await post_message(channel_id, response, thread_ts)
 
