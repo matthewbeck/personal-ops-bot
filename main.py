@@ -195,6 +195,7 @@ async def slack_events(request: Request, background_tasks: BackgroundTasks):
         print(f"📨 Message in channel: {channel_id}")
 
         channel_info = await slack_post("conversations.info", {"channel": channel_id})
+        print(f"🔍 conversations.info response: {channel_info}")
         channel_name = channel_info.get("channel", {}).get("name", "")
         print(f"📨 Channel name: {channel_name}")
         print(f"🔍 Looking up agent for: '#{channel_name}' — available agents: {list(AGENTS.keys())}")
