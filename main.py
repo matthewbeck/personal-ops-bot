@@ -120,46 +120,32 @@ def format_approval_message(action_type: str, data: dict) -> str:
     return str(data)
 
 async def handle_message(event: dict):
-    channel_id  = event.get("channel")
-    text        = event.get("text", "").strip()
-    thread_ts   = event.get("thread_ts")
-    bot_id      = event.get("bot_id")
+    try:
+        channel_id  = event.get("channel")
+        text        = event.get("text", "").strip()
+        thread_ts   = event.get("thread_ts")
+        bot_id      = event.get("bot_id")
 
-    if bot_id:
-        return
+        if bot_id:
+            return
 
-    bot_user_id = os.getenv("SLACK_BOT_USER_ID", "")
-    if bot_user_id and f"<@{bot_user_id}>" not in text:
-        return
+        bot_user_id = os.getenv("SLACK_BOT_USER_ID", "")
+        if bot_user_id and f"<@{bot_user_id}>" not in text:
+            return
 
-    agent = event.get("_agent")
-    if not agent:
-        return
+        agent = event.get("_agent")
+        if not agent:
+            return
 
-    response = await call_claude(agent, text)
-
-    if "<<<ACTION>>>" in response and "<<<END>>>" in response:
-        start = response.index("<<<ACTION>>>") + len("<<<ACTION>>>")
-        end   = response.index("<<<END>>>")
-        action_json = response[start:end].strip()
-        preamble    = response[:response.index("<<<ACTION>>>")].strip()
-
-        try:
-            action = json.loads(action_json)
-            approval_msg = await post_message(channel_id, format_approval_message(action["type"], action["data"]), thread_ts)
-            msg_ts = approval_msg["ts"]
-            PENDING_APPROVALS[msg_ts] = {
-                "type":    action["type"],
-                "data":    action["data"],
-                "channel": channel_id,
-                "agent":   agent,
-            }
-            if preamble:
-                await post_message(channel_id, preamble, thread_ts)
-        except Exception as e:
-            await post_message(channel_id, f"⚠️ Couldn't parse action: {e}\n\n{response}", thread_ts)
-    else:
+        print(f"📞 Calling Claude API...")
+        response = await call_claude(agent, text)
+        print(f"📞 Claude responded: {response[:100]}")
         await post_message(channel_id, response, thread_ts)
+
+    except Exception as e:
+        print(f"❌ handle_message error: {e}")
+        import traceback
+        traceback.print_exc()
 
 async def handle_reaction(event: dict):
     reaction   = event.get("reaction")
