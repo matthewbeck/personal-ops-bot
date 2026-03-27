@@ -178,9 +178,11 @@ async def slack_events(request: Request, background_tasks: BackgroundTasks):
     signature  = request.headers.get("X-Slack-Signature", "")
 
     if not verify_slack_signature(body_bytes, timestamp, signature):
+        print("❌ Signature verification failed")
         raise HTTPException(status_code=401, detail="Invalid signature")
 
     payload = json.loads(body_bytes)
+    print(f"✅ Event received: {payload.get('type')} / {payload.get('event', {}).get('type')}")
 
     if payload.get("type") == "url_verification":
         return JSONResponse({"challenge": payload["challenge"]})
@@ -190,9 +192,15 @@ async def slack_events(request: Request, background_tasks: BackgroundTasks):
 
     if event_type == "message":
         channel_id = event.get("channel")
+        print(f"📨 Message in channel: {channel_id}")
+
         channel_info = await slack_post("conversations.info", {"channel": channel_id})
         channel_name = channel_info.get("channel", {}).get("name", "")
+        print(f"📨 Channel name: {channel_name}")
+
         agent = get_agent_for_channel(channel_name)
+        print(f"🤖 Agent found: {agent is not None}")
+
         if agent:
             event["_agent"] = agent
             background_tasks.add_task(handle_message, event)
