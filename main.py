@@ -75,7 +75,7 @@ async def call_claude(agent: dict, user_message: str, conversation_history: list
     messages.append({"role": "user", "content": user_message})
 
     body = {
-        "model": "claude-sonnet-4-20250514",
+        "model": "claude-sonnet-4-5",
         "max_tokens": 1000,
         "system": agent["system_prompt"],
         "messages": messages,
@@ -96,6 +96,7 @@ async def call_claude(agent: dict, user_message: str, conversation_history: list
             json=body
         )
         data = r.json()
+    print(f"🤖 Full Claude response: {json.dumps(data)[:500]}")
 
     text_blocks = [b["text"] for b in data.get("content", []) if b.get("type") == "text"]
     return "\n".join(text_blocks) or "No response generated."
