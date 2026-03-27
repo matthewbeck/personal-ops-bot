@@ -62,14 +62,8 @@ PENDING_APPROVALS: dict = {}
 
 async def call_claude(agent: dict, user_message: str, conversation_history: list = None) -> str:
     tools = []
-    mcp_servers = []
-
     if "web_search" in agent.get("tools", []):
         tools.append({"type": "web_search_20250305", "name": "web_search"})
-    if "gmail" in agent.get("tools", []):
-        mcp_servers.append({"type": "url", "url": GMAIL_MCP_URL, "name": "gmail-mcp"})
-    if "google_calendar" in agent.get("tools", []):
-        mcp_servers.append({"type": "url", "url": GCAL_MCP_URL, "name": "gcal-mcp"})
 
     messages = conversation_history or []
     messages.append({"role": "user", "content": user_message})
@@ -82,8 +76,6 @@ async def call_claude(agent: dict, user_message: str, conversation_history: list
     }
     if tools:
         body["tools"] = tools
-    if mcp_servers:
-        body["mcp_servers"] = mcp_servers
 
     async with httpx.AsyncClient(timeout=60) as client:
         r = await client.post(
@@ -96,7 +88,7 @@ async def call_claude(agent: dict, user_message: str, conversation_history: list
             json=body
         )
         data = r.json()
-    print(f"🤖 Full Claude response: {json.dumps(data)[:500]}")
+        print(f"🤖 Claude response: {json.dumps(data)[:300]}")
 
     text_blocks = [b["text"] for b in data.get("content", []) if b.get("type") == "text"]
     return "\n".join(text_blocks) or "No response generated."
