@@ -91,7 +91,6 @@ async def call_claude(agent: dict, user_message: str, conversation_history: list
             headers={
                 "x-api-key": ANTHROPIC_API_KEY,
                 "anthropic-version": "2023-06-01",
-                "anthropic-beta": "mcp-client-2025-04-04",
                 "Content-Type": "application/json",
             },
             json=body
@@ -127,6 +126,10 @@ async def handle_message(event: dict):
     bot_id      = event.get("bot_id")
 
     if bot_id:
+        return
+
+    bot_user_id = os.getenv("SLACK_BOT_USER_ID", "")
+    if bot_user_id and f"<@{bot_user_id}>" not in text:
         return
 
     agent = event.get("_agent")
