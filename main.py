@@ -43,6 +43,15 @@ async def slack_post(endpoint: str, payload: dict):
         )
         return r.json()
 
+async def slack_get(endpoint: str, params: dict):
+    async with httpx.AsyncClient() as client:
+        r = await client.get(
+            f"https://slack.com/api/{endpoint}",
+            headers={"Authorization": f"Bearer {SLACK_BOT_TOKEN}"},
+            params=params
+        )
+        return r.json()
+
 async def post_message(channel: str, text: str, thread_ts: str = None):
     payload = {"channel": channel, "text": text}
     if thread_ts:
@@ -194,7 +203,7 @@ async def slack_events(request: Request, background_tasks: BackgroundTasks):
         channel_id = event.get("channel")
         print(f"📨 Message in channel: {channel_id}")
 
-        channel_info = await slack_post("conversations.info", {"channel": channel_id})
+        channel_info = await slack_get("conversations.info", {"channel": channel_id})
         print(f"🔍 conversations.info response: {channel_info}")
         channel_name = channel_info.get("channel", {}).get("name", "")
         print(f"📨 Channel name: {channel_name}")
